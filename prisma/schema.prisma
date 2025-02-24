@@ -1,0 +1,36 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Store user profanity stats to avoid re-analyzing recent posts
+model UserProfanityStats {
+  id              String   @id
+  handle          String
+  totalPosts      Int
+  profanityCount  Int
+  favoriteWord    String?
+  lastAnalyzed    DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([handle])
+}
+
+// Store individual post profanity details
+model PostProfanity {
+  id            String   @id
+  userDid       String
+  postText      String
+  profanityUsed String[]
+  createdAt     DateTime @default(now())
+
+  @@index([userDid])
+}

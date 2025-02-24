@@ -1,0 +1,36 @@
+{
+  "name": "bsky-profanity-counter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-esm src/index.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "mocha --require ts-node/register 'tests/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.12.2",
+    "@prisma/client": "^5.10.2",
+    "dotenv": "^16.4.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.20",
+    "@types/sinon": "^17.0.3",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "chai": "^5.1.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.3.0",
+    "prisma": "^5.10.2",
+    "sinon": "^17.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  }
+}
