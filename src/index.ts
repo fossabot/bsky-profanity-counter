@@ -48,11 +48,21 @@ async function main() {
 
         // Extract the parent URI if this is a reply
         let parentUri = null;
+        let rootUri = null;
+        let rootCid = null;
 
         // Safely access nested properties with type assertion
         const record = mention.record as any;
-        if (record && record.reply && record.reply.parent) {
-          parentUri = record.reply.parent.uri;
+        if (record && record.reply) {
+          if (record.reply.parent) {
+            parentUri = record.reply.parent.uri;
+          }
+
+          // Also capture the root if available
+          if (record.reply.root) {
+            rootUri = record.reply.root.uri;
+            rootCid = record.reply.root.cid;
+          }
         }
 
         if (!parentUri) {
@@ -108,7 +118,7 @@ async function main() {
           await replyToPost(agent, {
             uri: mention.uri,
             cid: mention.cid
-          }, responseMessage);
+          }, responseMessage, rootUri, rootCid);
 
           console.log(`Replied to mention with analysis results`);
         } catch (error) {

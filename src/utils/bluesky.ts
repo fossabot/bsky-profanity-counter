@@ -94,7 +94,6 @@ export const getPost = async (agent: BskyAgent, uri: string) => {
 
     // Use the correct API method for getting a post
     const response = await agent.getPost({ repo, rkey });
-    console.log('Post response structure:', JSON.stringify(response, null, 2));
     return response;
   } catch (error) {
     console.error(`Error getting post ${uri}:`, error);
@@ -106,13 +105,65 @@ export const getPost = async (agent: BskyAgent, uri: string) => {
 export const replyToPost = async (
   agent: BskyAgent,
   replyTo: { uri: string; cid: string },
-  text: string
+  text: string,
+  rootUri?: string,
+  rootCid?: string
 ) => {
+  // Create facets for mentions in the text
+  const facets = [];
+
+  // Regular expression to find mentions in the text
+  const mentionRegex = /@([a-zA-Z0-9.-]+)/g;
+  let match;
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const handle = match[1];
+    const start = match.index;
+    const end = start + match[0].length;
+
+    try {
+      // Resolve the handle to a DID
+      const resolveResponse = await agent.resolveHandle({ handle });
+      const did = resolveResponse.data.did;
+
+      // Add facet for the mention
+      facets.push({
+        index: {
+          byteStart: start,
+          byteEnd: end
+        },
+        features: [
+          {
+            $type: 'app.bsky.richtext.facet#mention',
+            did
+          }
+        ]
+      });
+    } catch (error) {
+      console.error(`Error resolving handle ${handle}:`, error);
+    }
+  }
+
+  // Set up the reply structure
+  const reply: any = {
+    parent: replyTo
+  };
+
+  // If rootUri and rootCid are provided, use them for the root
+  // Otherwise, use the parent as the root (for direct replies to top-level posts)
+  if (rootUri && rootCid) {
+    reply.root = {
+      uri: rootUri,
+      cid: rootCid
+    };
+  } else {
+    reply.root = replyTo;
+  }
+
+  // Post with facets if any were created
   await agent.post({
     text,
-    reply: {
-      root: replyTo,
-      parent: replyTo,
-    },
+    facets: facets.length > 0 ? facets : undefined,
+    reply: reply
   });
 };
