@@ -52,5 +52,3 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
-          MAX_POSTS_TO_ANALYZE: ${{ secrets.MAX_POSTS_TO_ANALYZE || '100' }}
-          CACHE_DURATION_HOURS: ${{ secrets.CACHE_DURATION_HOURS || '24' }}

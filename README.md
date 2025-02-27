@@ -1,74 +1,58 @@
 # Bluesky Profanity Counter Bot
 
-A Bluesky bot that analyzes users' post history to count and report on their profanity usage.
+A simple bot for Bluesky that counts profanities in a user's post history when mentioned in a reply.
 
-## Features
+## How It Works
 
-- Responds to mentions/tags in replies
-- Analyzes post history for profanity
-- Provides statistics on profanity usage
-- Caches results for better performance
-
-## Tech Stack
-
-- TypeScript
-- Node.js
-- Prisma
-- PostgreSQL
-- @atproto/api (Bluesky API)
-
-## Prerequisites
-
-- Node.js 20+
-- PostgreSQL
-- Bluesky account credentials
+1. The bot runs on a schedule (every 10 minutes via GitHub Actions)
+2. It checks for new mentions in replies
+3. When mentioned, it analyzes the post history of the author of the post being replied to
+4. It counts all profanities used by that author
+5. It replies with a summary of the profanity count and the most commonly used profanity
 
 ## Setup
 
-1. Clone the repository
-2. Copy `.env.example` to `.env` and fill in your credentials:
-   ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/bsky_profanity"
-   BLUESKY_IDENTIFIER="your-handle.bsky.social"
-   BLUESKY_PASSWORD="your-app-password"
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Initialize the database:
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-5. Start the bot:
-   ```bash
-   # Development
-   npm run dev
+### Prerequisites
 
-   # Production
-   npm run build
-   npm start
+- Node.js 22.14.0 or higher
+- pnpm
+
+### Installation
+
+1. Clone this repository
+2. Install dependencies:
    ```
+   pnpm install
+   ```
+3. Copy `.env.example` to `.env` and fill in your Bluesky credentials:
+   ```
+   cp .env.example .env
+   ```
+4. Build the project:
+   ```
+   pnpm build
+   ```
+5. Run the bot:
+   ```
+   pnpm start
+   ```
+
+### Environment Variables
+
+- `BLUESKY_IDENTIFIER`: Your Bluesky handle or email
+- `BLUESKY_PASSWORD`: Your Bluesky password or app password
 
 ## Deployment
 
-This project can be deployed on any Node.js hosting platform. Some options include:
+This bot is designed to run on GitHub Actions. The workflow is configured to run every 10 minutes.
 
-1. Railway
-2. Fly.io
-3. DigitalOcean
-4. Heroku
+To deploy:
 
-Make sure to set up the required environment variables on your hosting platform.
-
-## Development
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run test` - Run tests
+1. Fork this repository
+2. Add your Bluesky credentials as repository secrets:
+   - `BLUESKY_IDENTIFIER`
+   - `BLUESKY_PASSWORD`
+3. The GitHub Actions workflow will automatically run the bot on schedule
 
 ## License
 
