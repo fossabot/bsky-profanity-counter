@@ -1,12 +1,5 @@
 import { AppBskyFeedDefs } from '@atproto/api';
-
-// List of common profanities to check for
-// This is a basic list - you might want to expand or modify it
-const PROFANITY_LIST = [
-  'fuck', 'shit', 'damn', 'ass', 'bitch', 'crap', 'hell',
-  'bastard', 'dick', 'piss', 'cunt', 'asshole', 'bullshit',
-  'motherfucker', 'fucker', 'goddamn', 'dammit', 'wtf'
-];
+import BAD_WORDS from '../data/badWords.js';
 
 // Type for profanity analysis results
 export type ProfanityAnalysis = {
@@ -26,7 +19,7 @@ export const analyzeProfanity = (text: string): Record<string, number> => {
   const lowerText = text.toLowerCase();
 
   // Check for each profanity in the text
-  PROFANITY_LIST.forEach(word => {
+  BAD_WORDS.forEach(word => {
     // Create a regex that matches the word as a whole word
     const regex = new RegExp(`\\b${word}\\b`, 'g');
     const matches = lowerText.match(regex);
@@ -88,13 +81,13 @@ export const analyzePosts = (posts: AppBskyFeedDefs.PostView[]): ProfanityAnalys
 // Generate a response message based on the analysis
 export const generateResponseMessage = (analysis: ProfanityAnalysis, username: string): string => {
   if (analysis.totalCount === 0) {
-    return `@${username} has been a good citizen! No profanity found in their posts.`;
+    return `@${username} has been a good citizen!\nNo profanity found in their posts.`;
   }
 
-  let message = `@${username} has used ${analysis.totalCount} profanities in their posts.`;
+  let message = `@${username} has swears! They've used ${analysis.totalCount} profanities in their posts.`;
 
   if (analysis.mostUsed) {
-    message += ` Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count} times).`;
+    message += `\n\n📌 Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count} times).`;
   }
 
   return message;
