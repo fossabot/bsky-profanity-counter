@@ -43,7 +43,11 @@ export const markNotificationsAsRead = async (
   notificationIds: string[]
 ) => {
   if (notificationIds.length > 0) {
-    await agent.updateSeenNotifications(notificationIds[0]);
+    // Use current ISO timestamp for seenAt
+    const seenAt = new Date().toISOString();
+    await agent.app.bsky.notification.updateSeen({
+      seenAt: seenAt
+    });
   }
 };
 
@@ -88,8 +92,10 @@ export const getPost = async (agent: BskyAgent, uri: string) => {
     const repo = uriParts[2];
     const rkey = uriParts[4];
 
-    // @ts-ignore - Ignoring TypeScript error for API compatibility
-    return await agent.app.bsky.feed.getPost({ repo, rkey });
+    // Use the correct API method for getting a post
+    const response = await agent.getPost({ repo, rkey });
+    console.log('Post response structure:', JSON.stringify(response, null, 2));
+    return response;
   } catch (error) {
     console.error(`Error getting post ${uri}:`, error);
     return null;

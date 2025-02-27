@@ -49,6 +49,5 @@ jobs:
         run: node dist/index.js
         env:
           NODE_ENV: production
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}

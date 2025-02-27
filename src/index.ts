@@ -2,6 +2,14 @@ import dotenv from 'dotenv';
 import { BskyAgent } from '@atproto/api';
 import { analyzePosts, generateResponseMessage } from './utils/profanity.js';
 import { profanityCache } from './utils/cache.js';
+import {
+  createAgent,
+  getMentions,
+  getPost,
+  getUserPosts,
+  markNotificationsAsRead,
+  replyToPost
+} from './utils/bluesky.js';
 
 // Load environment variables
 dotenv.config();
@@ -19,23 +27,11 @@ async function main() {
 
   try {
     // Create and authenticate the Bluesky agent
-    const agent = new BskyAgent({
-      service: 'https://bsky.social',
-    });
-
-    await agent.login({
-      identifier: BLUESKY_IDENTIFIER,
-      password: BLUESKY_PASSWORD,
-    });
-
+    const agent = await createAgent();
     console.log('Successfully authenticated with Bluesky');
 
     // Get recent mentions
-    const notificationsResponse = await agent.listNotifications({ limit: 20 });
-    const mentions = notificationsResponse.data.notifications.filter(
-      notification => notification.reason === 'mention' && !notification.isRead
-    );
-
+    const mentions = await getMentions(agent);
     console.log(`Found ${mentions.length} unread mentions`);
 
     if (mentions.length === 0) {
@@ -67,28 +63,20 @@ async function main() {
         console.log(`Processing parent post: ${parentUri}`);
 
         try {
-          // Parse the URI to get the repo and record key
-          const uriParts = parentUri.split('/');
-          if (uriParts.length < 5) {
-            console.log(`Invalid parent URI format: ${parentUri}`);
-            continue;
-          }
+          // Get the parent post details using the utility function
+          const parentPostResponse = await getPost(agent, parentUri);
 
-          const repo = uriParts[2];
-          const rkey = uriParts[4];
-
-          // Get the parent post details
-          // @ts-ignore - Ignoring TypeScript error for API compatibility
-          const parentPostResponse = await agent.app.bsky.feed.getPost({ repo, rkey });
-
-          if (!parentPostResponse.success) {
+          if (!parentPostResponse) {
             console.log(`Failed to get parent post: ${parentUri}`);
             continue;
           }
 
-          // Extract author information
-          const authorDid = parentPostResponse.data.post.author.did;
-          const authorHandle = parentPostResponse.data.post.author.handle;
+          // Get the author's DID from the URI
+          const authorDid = parentPostResponse.uri.split('/')[2];
+
+          // Get the author's profile
+          const profileResponse = await agent.getProfile({ actor: authorDid });
+          const authorHandle = profileResponse.data.handle;
 
           console.log(`Processing mention for author: ${authorHandle} (${authorDid})`);
 
@@ -98,32 +86,8 @@ async function main() {
           if (!analysis) {
             console.log(`No cached data found for ${authorHandle}, analyzing posts...`);
 
-            // Get the author's posts
-            const allPosts = [];
-            let cursor;
-
-            // Fetch posts in batches until we have enough or there are no more
-            while (allPosts.length < 100) {
-              const postsResponse = await agent.getAuthorFeed({
-                actor: authorDid,
-                limit: 100,
-                cursor,
-              });
-
-              const posts = postsResponse.data.feed
-                .filter(item => !item.reason) // Filter out reposts
-                .map(item => item.post);
-
-              allPosts.push(...posts);
-
-              if (!postsResponse.data.cursor || posts.length === 0) {
-                break;
-              }
-
-              cursor = postsResponse.data.cursor;
-            }
-
-            const posts = allPosts.slice(0, 100);
+            // Get the author's posts using the utility function
+            const posts = await getUserPosts(agent, authorDid);
             console.log(`Retrieved ${posts.length} posts for analysis`);
 
             // Analyze the posts for profanity
@@ -140,20 +104,11 @@ async function main() {
           // Generate a response message
           const responseMessage = generateResponseMessage(analysis, authorHandle);
 
-          // Reply to the mention
-          await agent.post({
-            text: responseMessage,
-            reply: {
-              root: {
-                uri: mention.uri,
-                cid: mention.cid,
-              },
-              parent: {
-                uri: mention.uri,
-                cid: mention.cid,
-              },
-            },
-          });
+          // Reply to the mention using the utility function
+          await replyToPost(agent, {
+            uri: mention.uri,
+            cid: mention.cid
+          }, responseMessage);
 
           console.log(`Replied to mention with analysis results`);
         } catch (error) {
@@ -166,11 +121,9 @@ async function main() {
       }
     }
 
-    // Mark notifications as read
-    if (notificationIds.length > 0) {
-      await agent.updateSeenNotifications(notificationIds[0]);
-      console.log(`Marked ${notificationIds.length} notifications as read`);
-    }
+    // Mark notifications as read using the utility function
+    await markNotificationsAsRead(agent, notificationIds);
+    console.log(`Marked ${notificationIds.length} notifications as read`);
 
     // Clean up expired cache entries
     profanityCache.cleanup();
