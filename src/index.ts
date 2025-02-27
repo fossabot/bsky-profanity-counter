@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import { BskyAgent } from '@atproto/api';
 import { analyzePosts, generateResponseMessage } from './utils/profanity.js';
 import { profanityCache } from './utils/cache.js';
 import {
@@ -10,6 +9,7 @@ import {
   markNotificationsAsRead,
   replyToPost
 } from './utils/bluesky.js';
+import * as logger from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -19,24 +19,26 @@ const BLUESKY_IDENTIFIER = process.env.BLUESKY_IDENTIFIER || '';
 const BLUESKY_PASSWORD = process.env.BLUESKY_PASSWORD || '';
 
 if (!BLUESKY_IDENTIFIER || !BLUESKY_PASSWORD) {
-  throw new Error('Missing Bluesky credentials in environment variables');
+  logger.error('🕵️ Missing Bluesky credentials in environment variables');
+  throw new Error('🕵️ Missing Bluesky credentials in environment variables');
 }
 
 async function main() {
-  console.log('Starting Bluesky Profanity Counter Bot...');
+  logger.info('✨ Starting Bluesky Profanity Counter Bot...');
 
   try {
     // Create and authenticate the Bluesky agent
     const agent = await createAgent();
-    console.log('Successfully authenticated with Bluesky');
+    logger.success('✅ Successfully authenticated with Bluesky');
 
     // Get recent mentions
     const mentions = await getMentions(agent);
-    console.log(`Found ${mentions.length} unread mentions`);
 
     if (mentions.length === 0) {
-      console.log('No new mentions to process');
+      logger.info('🔍 No new mentions to process');
       return;
+    } else {
+      logger.info(`✅ Found ${mentions.length} unread mentions`);
     }
 
     // Process each mention
@@ -66,18 +68,18 @@ async function main() {
         }
 
         if (!parentUri) {
-          console.log('Skipping mention that is not a reply or missing parent URI');
+          logger.warn(`🔍 Skipping mention that is not a reply or missing parent URI\n\t- "${mention.uri}"`);
           continue;
         }
 
-        console.log(`Processing parent post: ${parentUri}`);
+        logger.info(`👨‍👩‍👦‍👦 Processing parent post: ${parentUri}`);
 
         try {
           // Get the parent post details using the utility function
           const parentPostResponse = await getPost(agent, parentUri);
 
           if (!parentPostResponse) {
-            console.log(`Failed to get parent post: ${parentUri}`);
+            logger.error(`❌ Failed to get parent post\n\t- "${parentUri}"`);
             continue;
           }
 
@@ -88,17 +90,17 @@ async function main() {
           const profileResponse = await agent.getProfile({ actor: authorDid });
           const authorHandle = profileResponse.data.handle;
 
-          console.log(`Processing mention for author: ${authorHandle} (${authorDid})`);
+          logger.info(`🗣️ Processing mention for author: ${authorHandle} (${authorDid})`);
 
           // Check if we have a cached result for this author
           let analysis = profanityCache.get(authorDid);
 
           if (!analysis) {
-            console.log(`No cached data found for ${authorHandle}, analyzing posts...`);
+            logger.info(`🔍 No cached data found for ${authorHandle}, analyzing posts...`);
 
             // Get the author's posts using the utility function
             const posts = await getUserPosts(agent, authorDid);
-            console.log(`Retrieved ${posts.length} posts for analysis`);
+            logger.info(`🔢 Retrieved ${posts.length} posts for analysis`);
 
             // Analyze the posts for profanity
             analysis = analyzePosts(posts);
@@ -106,9 +108,9 @@ async function main() {
             // Cache the results
             profanityCache.set(authorDid, analysis);
 
-            console.log(`Analysis complete: ${analysis.totalCount} profanities found`);
+            logger.success(`✅ Analysis complete: ${analysis.totalCount} profanities found`);
           } else {
-            console.log(`Using cached analysis for ${authorHandle}`);
+            logger.info(`🔍 Using cached analysis for ${authorHandle}`);
           }
 
           // Generate a response message
@@ -120,7 +122,7 @@ async function main() {
             cid: mention.cid
           }, responseMessage, rootUri, rootCid);
 
-          console.log(`Replied to mention with analysis results`);
+          logger.success(`✅ Replied to mention with analysis results`);
         } catch (error) {
           console.error(`Error processing parent post ${parentUri}:`, error);
           continue;
@@ -133,13 +135,13 @@ async function main() {
 
     // Mark notifications as read using the utility function
     await markNotificationsAsRead(agent, notificationIds);
-    console.log(`Marked ${notificationIds.length} notifications as read`);
+    logger.success(`✅ Marked ${notificationIds.length} notifications as read`);
 
     // Clean up expired cache entries
     profanityCache.cleanup();
 
   } catch (error) {
-    console.error('Error running the bot:', error);
+    logger.error(`❌ Error running the bot:\n\t- ${error || 'unknown'}`);
   }
 }
 

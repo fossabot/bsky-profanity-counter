@@ -1,5 +1,6 @@
 import { BskyAgent, AppBskyFeedDefs } from '@atproto/api';
 import dotenv from 'dotenv';
+import * as logger from './logger.js';
 
 dotenv.config();
 
@@ -96,7 +97,7 @@ export const getPost = async (agent: BskyAgent, uri: string) => {
     const response = await agent.getPost({ repo, rkey });
     return response;
   } catch (error) {
-    console.error(`Error getting post ${uri}:`, error);
+    logger.error(`❌ Error getting post ${uri}\n\t- ${error || 'unknown'}`);
     return null;
   }
 };
@@ -140,7 +141,7 @@ export const replyToPost = async (
         ]
       });
     } catch (error) {
-      console.error(`Error resolving handle ${handle}:`, error);
+      logger.error(`❌ Error resolving handle ${handle}\n\t- ${error || 'unknown'}`);
     }
   }
 

@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { ProfanityAnalysis } from './profanity.js';
+import * as logger from './logger.js';
 
 dotenv.config();
 
