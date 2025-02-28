@@ -1,6 +1,18 @@
-# Bluesky Profanity Counter Bot
+<div align="center" margin="0 auto 20px">
+   <h1>profanity.accountant</h1>
+   <p style="font-style: italic;">
+      🤬 A simple bot for Bluesky that counts profanities in a user's post history when mentioned in a reply.
+  </p>
+   <div>
 
-A simple bot for Bluesky that counts profanities in a user's post history when mentioned in a reply.
+  </div>
+</div>
+
+---
+
+# profanity.accountant
+
+Counting your sins (if profanity was a sin).
 
 ## How It Works
 
@@ -12,27 +24,36 @@ A simple bot for Bluesky that counts profanities in a user's post history when m
 
 ## Setup
 
+You too can run your very own profanity accountant!
+
 ### Prerequisites
 
-- Node.js 22.14.0 or higher
-- pnpm
+- Node.js >= `22.14.0`
+- `pnpm`
 
 ### Installation
 
 1. Clone this repository
 2. Install dependencies:
+
    ```
    pnpm install
    ```
+
 3. Copy `.env.example` to `.env` and fill in your Bluesky credentials:
+
    ```
    cp .env.example .env
    ```
+
 4. Build the project:
+
    ```
    pnpm build
    ```
+
 5. Run the bot:
+
    ```
    pnpm start
    ```

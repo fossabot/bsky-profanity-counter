@@ -1,5 +1,6 @@
 {
-  "name": "bsky-profanity-counter",
+  "name": "profanity.accountant",
+  "description": "🤬 A simple bot for Bluesky that counts profanities in a user's post history when mentioned in a reply.",
   "version": "0.1.0",
   "private": true,
   "type": "module",
