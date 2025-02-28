@@ -114,7 +114,7 @@ async function main() {
           }
 
           // Generate a response message
-          const responseMessage = generateResponseMessage(analysis, authorHandle);
+          const responseMessage = generateResponseMessage(analysis, authorHandle, analysis.postCount);
 
           // Reply to the mention using the utility function
           await replyToPost(agent, {

@@ -26,6 +26,11 @@ class Cache {
       return null;
     }
 
+    // Ensure backward compatibility with cached entries that don't have postCount
+    if (entry.data && entry.data.postCount === undefined) {
+      entry.data.postCount = 100; // Default to 100 for old cached entries
+    }
+
     return entry.data;
   }
 

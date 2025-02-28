@@ -83,37 +83,93 @@ export const markNotificationsAsRead = async (
 export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBskyFeedDefs.PostView[]> => {
   const allPosts: AppBskyFeedDefs.PostView[] = [];
   let cursor;
+  const MAX_POSTS = 20_000; // Maximum number of posts to retrieve
+  const CHUNK_SIZE = 100;  // Size of each chunk (API limit)
+  const ONE_YEAR_AGO = new Date();
+  ONE_YEAR_AGO.setFullYear(ONE_YEAR_AGO.getFullYear() - 1);
 
-  logger.info(`🔍 Getting posts for ${did}...`);
+  logger.info(`🔍 Getting posts for ${did} (up to ${MAX_POSTS} posts from the last year)...`);
 
-  // Fetch posts in batches until we have enough or there are no more
-  while (allPosts.length < 100) {
-    const response = await agent.getAuthorFeed({
-      actor: did,
-      limit: 100,
-      cursor,
-    });
+  let chunkCount = 0;
+  let oldestPostDate = new Date();
+  let reachedYearOld = false;
 
-    const posts = response.data.feed
-      .filter(item => !item.reason) // Filter out reposts
-      .map(item => item.post);
+  // Fetch posts in batches until we hit the max, reach a year old posts, or there are no more
+  while (allPosts.length < MAX_POSTS && !reachedYearOld) {
+    chunkCount++;
 
-    allPosts.push(...posts);
+    try {
+      const response = await agent.getAuthorFeed({
+        actor: did,
+        limit: CHUNK_SIZE,
+        cursor,
+      });
 
-    if (!response.data.cursor || posts.length === 0) {
-      break;
+      const posts = response.data.feed
+        .filter(item => !item.reason) // Filter out reposts
+        .map(item => item.post);
+
+      if (posts.length === 0) {
+        logger.info(`🔍 No more posts found after ${allPosts.length} total posts`);
+        break;
+      }
+
+      // Check the date of the last post in this chunk
+      if (posts.length > 0) {
+        const lastPost = posts[posts.length - 1];
+        const lastPostRecord = lastPost.record as any;
+
+        if (lastPostRecord && lastPostRecord.createdAt) {
+          const postDate = new Date(lastPostRecord.createdAt);
+          oldestPostDate = postDate;
+
+          // Check if we've reached posts older than one year
+          if (postDate < ONE_YEAR_AGO) {
+            reachedYearOld = true;
+            logger.info(`🕒 Reached posts older than one year (${postDate.toISOString()})`);
+
+            // Filter out posts older than one year
+            const recentPosts = posts.filter(post => {
+              const record = post.record as any;
+              return record && record.createdAt && new Date(record.createdAt) >= ONE_YEAR_AGO;
+            });
+
+            allPosts.push(...recentPosts);
+            logger.info(`✅ Processed chunk #${chunkCount}: Added ${recentPosts.length} posts (within last year), reached year limit`);
+            break;
+          }
+        }
+      }
+
+      // Add all posts from this chunk
+      allPosts.push(...posts);
+
+      logger.info(`✅ Processed chunk #${chunkCount}: Added ${posts.length} posts (total: ${allPosts.length})`);
+
+      // Break if no cursor for next page
+      if (!response.data.cursor) {
+        logger.info(`🔍 No more pages available after ${allPosts.length} total posts`);
+        break;
+      }
+
+      cursor = response.data.cursor;
+
+    } catch (error) {
+      logger.error(`❌ Error fetching posts chunk #${chunkCount}: ${error || 'unknown'}`);
+      // Wait a bit before retrying to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-
-    cursor = response.data.cursor;
   }
 
-  if (allPosts.length) {
-    logger.success(`✅ Found ${allPosts.length} posts`);
-  } else {
-    logger.info('❌ No posts found');
+  // Log the reason for stopping
+  if (allPosts.length >= MAX_POSTS) {
+    logger.info(`🛑 Reached maximum post limit (${MAX_POSTS})`);
+  } else if (reachedYearOld) {
+    logger.info(`🕒 Stopped at posts from ${oldestPostDate.toISOString()} (one year limit)`);
   }
 
-  return allPosts.slice(0, 100);
+  logger.success(`✅ Found ${allPosts.length} posts within the last year`);
+  return allPosts;
 };
 
 // Get a post by URI

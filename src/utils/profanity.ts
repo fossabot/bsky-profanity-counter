@@ -9,6 +9,7 @@ export type ProfanityAnalysis = {
     word: string;
     count: number;
   } | null;
+  postCount: number; // Number of posts analyzed
 };
 
 // Analyze text for profanities
@@ -74,17 +75,18 @@ export const analyzePosts = (posts: AppBskyFeedDefs.PostView[]): ProfanityAnalys
   return {
     totalCount,
     wordCounts: totalWordCounts,
-    mostUsed
+    mostUsed,
+    postCount: posts.length // Add the number of posts that were analyzed
   };
 };
 
 // Generate a response message based on the analysis
-export const generateResponseMessage = (analysis: ProfanityAnalysis, username: string): string => {
+export const generateResponseMessage = (analysis: ProfanityAnalysis, username: string, postCount: number): string => {
   if (analysis.totalCount === 0) {
-    return `@${username} has been a good citizen!\nNo profanity found in their posts.`;
+    return `@${username} has been a good citizen!\nNo profanity found in their last ${postCount} posts.`;
   }
 
-  let message = `@${username} has swears! They've used ${analysis.totalCount} profanities in their posts.`;
+  let message = `@${username} has swears! They've used ${analysis.totalCount} profanities in their last ${postCount} posts.`;
 
   if (analysis.mostUsed) {
     message += `\n\n📌 Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count} times).`;
