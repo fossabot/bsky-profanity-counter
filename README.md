@@ -1,7 +1,7 @@
 <div align="center" margin="0 auto 20px">
    <h1>profanity.accountant</h1>
    <p style="font-style: italic;">
-      🤬 A simple bot for Bluesky that counts profanities in a user's post history when mentioned in a reply.
+      🤬 A bot for Bluesky which tells you how much profanity a user has posted..
   </p>
    <div>
 
@@ -9,8 +9,6 @@
 </div>
 
 ---
-
-# profanity.accountant
 
 Counting your sins (if profanity was a sin).
 
@@ -74,6 +72,14 @@ To deploy:
    - `BLUESKY_IDENTIFIER`
    - `BLUESKY_PASSWORD`
 3. The GitHub Actions workflow will automatically run the bot on schedule
+
+## Contributing
+
+PRs and issues are welcome!
+
+## Inspiration
+
+Shoutout to the [Sheriff of Profanity](https://www.reddit.com/user/profanitycounter/) on Reddit for the inspiration.
 
 ## License
 
