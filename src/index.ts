@@ -52,6 +52,9 @@ async function main() {
         let parentUri = null;
         let rootUri = null;
         let rootCid = null;
+        //  For cases where the user just tags the bot in a post (ie "direct mention")
+        let isDirectMention = false;
+        let authorDid = '';
 
         // Safely access nested properties with type assertion
         const record = mention.record as any;
@@ -65,32 +68,41 @@ async function main() {
             rootUri = record.reply.root.uri;
             rootCid = record.reply.root.cid;
           }
+        } else {
+          // This is a direct mention (not a reply)
+          isDirectMention = true;
+          // Use the mention author as the target for analysis
+          authorDid = mention.author.did;
+          logger.info(`👨‍👩‍👦‍👦 Processing direct mention from: ${authorDid}`);
         }
 
-        if (!parentUri) {
-          logger.warn(`🔍 Skipping mention that is not a reply or missing parent URI\n\t- "${mention.uri}"`);
+        if (!parentUri && !isDirectMention) {
+          logger.warn(`🔍 Skipping mention that is not a reply or direct mention\n\t- "${mention.uri}"`);
           continue;
         }
 
-        logger.info(`👨‍👩‍👦‍👦 Processing parent post: ${parentUri}`);
-
         try {
-          // Get the parent post details using the utility function
-          const parentPostResponse = await getPost(agent, parentUri);
+          // For replies, get the parent post author
+          if (!isDirectMention) {
+            logger.info(`👨‍👩‍👦‍👦 Processing parent post: ${parentUri}`);
 
-          if (!parentPostResponse) {
-            logger.error(`❌ Failed to get parent post\n\t- "${parentUri}"`);
-            continue;
+            // Get the parent post details using the utility function
+            const parentPostResponse = await getPost(agent, parentUri);
+
+            if (!parentPostResponse) {
+              logger.error(`❌ Failed to get parent post\n\t- "${parentUri}"`);
+              continue;
+            }
+
+            // Get the author's DID from the URI
+            authorDid = parentPostResponse.uri.split('/')[2];
           }
-
-          // Get the author's DID from the URI
-          const authorDid = parentPostResponse.uri.split('/')[2];
 
           // Get the author's profile
           const profileResponse = await agent.getProfile({ actor: authorDid });
           const authorHandle = profileResponse.data.handle;
 
-          logger.info(`🗣️ Processing mention for author: ${authorHandle} (${authorDid})`);
+          logger.info(`🗣️ Processing ${isDirectMention ? 'direct mention' : 'reply mention'} for author: ${authorHandle} (${authorDid})`);
 
           // Check if we have a cached result for this author
           let analysis = profanityCache.get(authorDid);
@@ -125,6 +137,7 @@ async function main() {
           logger.success(`✅ Replied to mention with analysis results`);
         } catch (error) {
           console.error(`Error processing parent post ${parentUri}:`, error);
+
           continue;
         }
 
