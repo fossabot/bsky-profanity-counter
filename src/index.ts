@@ -31,27 +31,26 @@ async function main() {
     const agent = await createAgent();
     logger.success('✅ Successfully authenticated with Bluesky');
 
-    // Get recent mentions - these are already sorted from oldest to newest
-    const mentions = await getMentions(agent);
+    // Keep processing in a loop until there are no more unread mentions
+    let continueProcessing = true;
 
-    if (mentions.length === 0) {
-      logger.info('🔍 No new mentions to process');
-      return;
-    } else {
-      logger.info(`✅ Found ${mentions.length} unread mentions to process`);
-    }
+    while (continueProcessing) {
+      // Get the most recent unread notifications
+      // These are sorted from oldest to newest internally in getMentions
+      const mentions = await getMentions(agent);
 
-    // Keep track of how many notifications we've successfully processed
-    let successfullyProcessed = 0;
-    // Keep track of the timestamp of the last processed notification
-    let lastProcessedTimestamp = '';
+      if (mentions.length === 0) {
+        logger.info('🔍 No more unread mentions to process');
+        continueProcessing = false;
+        continue;
+      } else {
+        logger.info(`✅ Found ${mentions.length} unread mentions to process`);
+      }
 
-    // Process each mention in order from oldest to newest
-    for (const mention of mentions) {
+      // Get the oldest unread mention (first in the sorted array)
+      const mention = mentions[0];
+
       try {
-        // Store this notification's timestamp
-        lastProcessedTimestamp = mention.indexedAt;
-
         // Extract the parent URI if this is a reply
         let parentUri = null;
         let rootUri = null;
@@ -82,6 +81,10 @@ async function main() {
 
         if (!parentUri && !isDirectMention) {
           logger.warn(`🔍 Skipping mention that is not a reply or direct mention\n\t- "${mention.uri}"`);
+
+          // Mark this notification as read even though we're skipping it
+          await markNotificationsAsRead(agent, mention.indexedAt);
+          logger.success(`✅ Marked notification as skipped and read up to: ${mention.indexedAt}`);
           continue;
         }
 
@@ -95,6 +98,10 @@ async function main() {
 
             if (!parentPostResponse) {
               logger.error(`❌ Failed to get parent post\n\t- "${parentUri}"`);
+
+              // Mark this notification as read even though we couldn't process it
+              await markNotificationsAsRead(agent, mention.indexedAt);
+              logger.success(`✅ Marked notification as read despite error, up to: ${mention.indexedAt}`);
               continue;
             }
 
@@ -140,28 +147,30 @@ async function main() {
 
           logger.success(`✅ Replied to mention with analysis results`);
 
-          // Increment our successfully processed counter
-          successfullyProcessed++;
+          // Mark this notification as read immediately after processing
+          await markNotificationsAsRead(agent, mention.indexedAt);
+          logger.success(`✅ Marked notification as read up to: ${mention.indexedAt}`);
 
         } catch (error) {
           console.error(`Error processing parent post ${parentUri}:`, error);
+
+          // Mark this notification as read even in case of error
+          await markNotificationsAsRead(agent, mention.indexedAt);
+          logger.success(`✅ Marked notification as read despite error, up to: ${mention.indexedAt}`);
           continue;
         }
 
       } catch (error) {
         console.error('Error processing mention:', error);
+
+        // Even in case of an error, mark this notification as read to avoid getting stuck
+        await markNotificationsAsRead(agent, mention.indexedAt);
+        logger.success(`✅ Marked notification as read despite error, up to: ${mention.indexedAt}`);
       }
-    }
 
-    // After processing all mentions, mark notifications as read up to the last processed timestamp
-    if (successfullyProcessed > 0 && lastProcessedTimestamp) {
-      logger.info(`🏁 Successfully processed ${successfullyProcessed} notifications`);
-      await markNotificationsAsRead(agent, lastProcessedTimestamp);
-      logger.success(`✅ Marked ${successfullyProcessed} notifications as read based on timestamp: ${lastProcessedTimestamp}`);
+      // Clean up expired cache entries periodically
+      profanityCache.cleanup();
     }
-
-    // Clean up expired cache entries
-    profanityCache.cleanup();
 
   } catch (error) {
     logger.error(`❌ Error running the bot:\n\t- ${error || 'unknown'}`);
