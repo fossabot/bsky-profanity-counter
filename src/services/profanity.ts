@@ -83,13 +83,13 @@ export const analyzePosts = (posts: AppBskyFeedDefs.PostView[]): ProfanityAnalys
 // Generate a response message based on the analysis
 export const generateResponseMessage = (analysis: ProfanityAnalysis, username: string, postCount: number): string => {
   if (analysis.totalCount === 0) {
-    return `@${username} has been a good citizen!\nNo profanity found in their last ${postCount} posts.`;
+    return `@${username} has been a good citizen!\nNo profanity found in their last ${postCount.toLocaleString('en-CA')} posts.`;
   }
 
-  let message = `@${username} has swears! They've used ${analysis.totalCount} profanities in their last ${postCount} posts.`;
+  let message = `@${username} has swears! They've used ${analysis.totalCount.toLocaleString('en-CA')} profanities in their last ${postCount.toLocaleString('en-CA')} posts.`;
 
   if (analysis.mostUsed) {
-    message += `\n\n📌 Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count} times).`;
+    message += `\n\n📌 Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count.toLocaleString('en-CA')} times).`;
   }
 
   return message;

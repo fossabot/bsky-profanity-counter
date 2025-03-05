@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import { analyzePosts, generateResponseMessage } from './utils/profanity.js';
-import { profanityCache } from './utils/cache.js';
+import { analyzePosts, generateResponseMessage } from './services/profanity.js';
+import { profanityCache } from './services/cache.js';
 import {
   createAgent,
   getMentions,
@@ -8,8 +8,8 @@ import {
   getUserPosts,
   markNotificationsAsRead,
   replyToPost
-} from './utils/bluesky.js';
-import * as logger from './utils/logger.js';
+} from './services/bluesky.js';
+import * as logger from './services/logger.js';
 
 // Load environment variables
 dotenv.config();
