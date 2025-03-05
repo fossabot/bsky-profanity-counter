@@ -32,7 +32,7 @@ async function main() {
     logger.success('✅ Successfully authenticated with Bluesky');
 
     // Get recent mentions - these are already sorted from oldest to newest
-    let mentions = await getMentions(agent);
+    const mentions = await getMentions(agent);
 
     if (mentions.length === 0) {
       logger.info('🔍 No new mentions to process');
@@ -41,17 +41,17 @@ async function main() {
       logger.info(`✅ Found ${mentions.length} unread mentions to process`);
     }
 
-    // Process mentions one at a time - they're already sorted from oldest to newest
-    while (mentions.length > 0) {
-      // Take the first mention from the array (which is the oldest unprocessed mention)
-      const mention = mentions.shift();
+    // Keep track of how many notifications we've successfully processed
+    let successfullyProcessed = 0;
+    // Keep track of the timestamp of the last processed notification
+    let lastProcessedTimestamp = '';
 
-      // Skip if mention is undefined (shouldn't happen, but TypeScript wants this check)
-      if (!mention) {
-        continue;
-      }
-
+    // Process each mention in order from oldest to newest
+    for (const mention of mentions) {
       try {
+        // Store this notification's timestamp
+        lastProcessedTimestamp = mention.indexedAt;
+
         // Extract the parent URI if this is a reply
         let parentUri = null;
         let rootUri = null;
@@ -140,14 +140,8 @@ async function main() {
 
           logger.success(`✅ Replied to mention with analysis results`);
 
-          // Mark this notification as read immediately after processing
-          await markNotificationsAsRead(agent, [mention.uri]);
-          logger.success(`✅ Marked notification as read (along with all older notifications)`);
-
-          // Re-fetch unread mentions after each processed notification
-          logger.info(`📥 Re-fetching unread mentions...`);
-          mentions = await getMentions(agent);
-          logger.info(`✅ Found ${mentions.length} unread mentions remaining`);
+          // Increment our successfully processed counter
+          successfullyProcessed++;
 
         } catch (error) {
           console.error(`Error processing parent post ${parentUri}:`, error);
@@ -157,6 +151,13 @@ async function main() {
       } catch (error) {
         console.error('Error processing mention:', error);
       }
+    }
+
+    // After processing all mentions, mark notifications as read up to the last processed timestamp
+    if (successfullyProcessed > 0 && lastProcessedTimestamp) {
+      logger.info(`🏁 Successfully processed ${successfullyProcessed} notifications`);
+      await markNotificationsAsRead(agent, lastProcessedTimestamp);
+      logger.success(`✅ Marked ${successfullyProcessed} notifications as read based on timestamp: ${lastProcessedTimestamp}`);
     }
 
     // Clean up expired cache entries

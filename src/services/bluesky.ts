@@ -76,24 +76,20 @@ export const getMentions = async (agent: BskyAgent) => {
 };
 
 // Mark notifications as read
+// NOTE: The Bluesky API does not support marking individual notifications as read.
+// It only allows marking ALL notifications up to a specific timestamp as read.
+// So this function marks all notifications up to the specified timestamp as read.
 export const markNotificationsAsRead = async (
   agent: BskyAgent,
-  notificationIds: string[]
+  seenAt: string // The timestamp to mark notifications as read up to
 ) => {
-  if (notificationIds.length > 0) {
-    logger.info(`🔍 Marking ${notificationIds.length} notification(s) as read.`);
+  logger.info(`🔍 Marking all notifications as read up to: ${seenAt}`);
 
-    // Use a timestamp from the notification if available, otherwise use current time
-    // Note: This is a limitation of the Bluesky API - we can only mark all notifications
-    // up to a certain timestamp as read, not individual notifications
-    const seenAt = new Date().toISOString();
+  await agent.app.bsky.notification.updateSeen({
+    seenAt: seenAt
+  });
 
-    await agent.app.bsky.notification.updateSeen({
-      seenAt: seenAt
-    });
-
-    logger.info(`✅ Marked notifications as read up to ${seenAt}`);
-  }
+  logger.info(`✅ Successfully marked notifications as read up to ${seenAt}`);
 };
 
 // Get user's posts
