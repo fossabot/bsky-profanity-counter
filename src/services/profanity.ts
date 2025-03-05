@@ -5,10 +5,11 @@ import BAD_WORDS from '../data/badWords.js';
 export type ProfanityAnalysis = {
   totalCount: number;
   wordCounts: Record<string, number>;
-  mostUsed: {
+  topThree: {
     word: string;
     count: number;
-  } | null;
+    rank: number; // 1, 2, or 3
+  }[];
   postCount: number; // Number of posts analyzed
 };
 
@@ -61,21 +62,27 @@ export const analyzePosts = (posts: AppBskyFeedDefs.PostView[]): ProfanityAnalys
   // Calculate total count
   const totalCount = Object.values(totalWordCounts).reduce((sum, count) => sum + count, 0);
 
-  // Find most used profanity
-  let mostUsed = null;
-  let highestCount = 0;
+  // Find top three most used profanities
+  const topThree: { word: string; count: number; rank: number }[] = [];
 
-  Object.entries(totalWordCounts).forEach(([word, count]) => {
-    if (count > highestCount) {
-      mostUsed = { word, count };
-      highestCount = count;
-    }
+  // Sort all word counts in descending order
+  const sortedEntries = Object.entries(totalWordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3); // Take only the top 3
+
+  // Create the top three array with ranks
+  sortedEntries.forEach(([word, count], index) => {
+    topThree.push({
+      word,
+      count,
+      rank: index + 1 // Rank 1, 2, or 3
+    });
   });
 
   return {
     totalCount,
     wordCounts: totalWordCounts,
-    mostUsed,
+    topThree,
     postCount: posts.length // Add the number of posts that were analyzed
   };
 };
@@ -88,8 +95,26 @@ export const generateResponseMessage = (analysis: ProfanityAnalysis, username: s
 
   let message = `@${username} has swears! They've used ${analysis.totalCount.toLocaleString('en-CA')} profanities in their last ${postCount.toLocaleString('en-CA')} posts.`;
 
-  if (analysis.mostUsed) {
-    message += `\n\n📌 Their favorite is "${analysis.mostUsed.word}" (${analysis.mostUsed.count.toLocaleString('en-CA')} times).`;
+  // Add top three profanities with medal emojis if available
+  if (analysis.topThree.length > 0) {
+    message += "\n\n";
+
+    analysis.topThree.forEach(item => {
+      let medal = '';
+      switch (item.rank) {
+        case 1:
+          medal = '🥇';
+          break;
+        case 2:
+          medal = '🥈';
+          break;
+        case 3:
+          medal = '🥉';
+          break;
+      }
+
+      message += `${medal} "${item.word}" (${item.count.toLocaleString('en-CA')} times)\n`;
+    });
   }
 
   return message;
