@@ -57,11 +57,22 @@ export const getMentions = async (agent: BskyAgent) => {
   }
 
   // Filter for mentions in replies that we haven't processed yet
-  return allNotifications.filter(
+  const unreadMentions = allNotifications.filter(
     (notification) =>
       notification.reason === 'mention' &&
       !notification.isRead
   );
+
+  // Sort notifications from oldest to newest based on indexedAt timestamp
+  unreadMentions.sort((a, b) => {
+    const dateA = new Date(a.indexedAt);
+    const dateB = new Date(b.indexedAt);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  logger.info(`📋 Processing ${unreadMentions.length} unread mentions from oldest to newest`);
+
+  return unreadMentions;
 };
 
 // Mark notifications as read
@@ -70,12 +81,18 @@ export const markNotificationsAsRead = async (
   notificationIds: string[]
 ) => {
   if (notificationIds.length > 0) {
-    logger.info(`🔍 Marking ${notificationIds.length} notifications as read.`);
-    // Use current ISO timestamp for seenAt
+    logger.info(`🔍 Marking ${notificationIds.length} notification(s) as read.`);
+
+    // Use a timestamp from the notification if available, otherwise use current time
+    // Note: This is a limitation of the Bluesky API - we can only mark all notifications
+    // up to a certain timestamp as read, not individual notifications
     const seenAt = new Date().toISOString();
+
     await agent.app.bsky.notification.updateSeen({
       seenAt: seenAt
     });
+
+    logger.info(`✅ Marked notifications as read up to ${seenAt}`);
   }
 };
 

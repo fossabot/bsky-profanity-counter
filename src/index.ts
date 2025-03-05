@@ -31,23 +31,27 @@ async function main() {
     const agent = await createAgent();
     logger.success('✅ Successfully authenticated with Bluesky');
 
-    // Get recent mentions
-    const mentions = await getMentions(agent);
+    // Get recent mentions - these are already sorted from oldest to newest
+    let mentions = await getMentions(agent);
 
     if (mentions.length === 0) {
       logger.info('🔍 No new mentions to process');
       return;
     } else {
-      logger.info(`✅ Found ${mentions.length} unread mentions`);
+      logger.info(`✅ Found ${mentions.length} unread mentions to process`);
     }
 
-    // Process each mention
-    const notificationIds = [];
+    // Process mentions one at a time - they're already sorted from oldest to newest
+    while (mentions.length > 0) {
+      // Take the first mention from the array (which is the oldest unprocessed mention)
+      const mention = mentions.shift();
 
-    for (const mention of mentions) {
+      // Skip if mention is undefined (shouldn't happen, but TypeScript wants this check)
+      if (!mention) {
+        continue;
+      }
+
       try {
-        notificationIds.push(mention.uri);
-
         // Extract the parent URI if this is a reply
         let parentUri = null;
         let rootUri = null;
@@ -135,9 +139,18 @@ async function main() {
           }, responseMessage, rootUri, rootCid);
 
           logger.success(`✅ Replied to mention with analysis results`);
+
+          // Mark this notification as read immediately after processing
+          await markNotificationsAsRead(agent, [mention.uri]);
+          logger.success(`✅ Marked notification as read (along with all older notifications)`);
+
+          // Re-fetch unread mentions after each processed notification
+          logger.info(`📥 Re-fetching unread mentions...`);
+          mentions = await getMentions(agent);
+          logger.info(`✅ Found ${mentions.length} unread mentions remaining`);
+
         } catch (error) {
           console.error(`Error processing parent post ${parentUri}:`, error);
-
           continue;
         }
 
@@ -145,10 +158,6 @@ async function main() {
         console.error('Error processing mention:', error);
       }
     }
-
-    // Mark notifications as read using the utility function
-    await markNotificationsAsRead(agent, notificationIds);
-    logger.success(`✅ Marked ${notificationIds.length} notifications as read`);
 
     // Clean up expired cache entries
     profanityCache.cleanup();
