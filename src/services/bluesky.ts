@@ -1,6 +1,7 @@
 import { BskyAgent, AppBskyFeedDefs } from '@atproto/api';
 import dotenv from 'dotenv';
 import * as logger from './logger.js';
+import type { Notification } from '../types.js';
 
 dotenv.config();
 
@@ -23,37 +24,42 @@ export const createAgent = async (): Promise<BskyAgent> => {
     password: BLUESKY_PASSWORD,
   });
 
+  logger.success('🔑 Successfully authenticated with Bluesky');
+
   return agent;
 };
 
 // Get notifications where the bot is mentioned
 export const getMentions = async (agent: BskyAgent) => {
-  let allNotifications = [];
-  let cursor;
+  let allNotifications: Notification[] = [];
 
   logger.info('🔍 Getting notifications...');
 
   // Iterate through all pages of notifications
-  while (true) {
+  // Recursive function to fetch notifications page by page
+  const fetchNotificationsPage = async (currentCursor?: string): Promise<void> => {
     const response = await agent.listNotifications({
       limit: 100,
-      cursor
+      cursor: currentCursor
     });
 
     allNotifications.push(...response.data.notifications);
 
-    // If there's no cursor, we've reached the end
+    // Base case: no more pages to fetch
     if (!response.data.cursor) {
-      break;
+      return;
     }
 
-    cursor = response.data.cursor;
-  }
+    // Recursive case: fetch the next page
+    return fetchNotificationsPage(response.data.cursor);
+  };
 
-  if (allNotifications.length) {
-    logger.success(`✅ Found ${allNotifications.length} notifications`);
-  } else {
+  // Start the recursive fetching process
+  await fetchNotificationsPage();
+
+  if (!allNotifications.length) {
     logger.info('❌ No notifications found');
+    return [];
   }
 
   // Filter for mentions in replies that we haven't processed yet
@@ -63,33 +69,18 @@ export const getMentions = async (agent: BskyAgent) => {
       !notification.isRead
   );
 
-  // Sort notifications from oldest to newest based on indexedAt timestamp
-  unreadMentions.sort((a, b) => {
-    const dateA = new Date(a.indexedAt);
-    const dateB = new Date(b.indexedAt);
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  logger.info(`📋 Processing ${unreadMentions.length} unread mentions from oldest to newest`);
+  logger.info(`📋 Found ${unreadMentions.length} unread mentions`);
 
   return unreadMentions;
 };
 
-// Mark notifications as read
-// NOTE: The Bluesky API does not support marking individual notifications as read.
-// It only allows marking ALL notifications up to a specific timestamp as read.
-// So this function marks all notifications up to the specified timestamp as read.
-export const markNotificationsAsRead = async (
-  agent: BskyAgent,
-  seenAt: string // The timestamp to mark notifications as read up to
-) => {
-  logger.info(`🔍 Marking all notifications as read up to: ${seenAt}`);
-
+//  Marks all notifications as read
+export const markNotificationsAsRead = async (agent: BskyAgent) => {
+  const seenAt = new Date().toISOString();
   await agent.app.bsky.notification.updateSeen({
     seenAt: seenAt
   });
-
-  logger.info(`✅ Successfully marked notifications as read up to ${seenAt}`);
+  logger.success(`📑 Successfully marked notifications as read up to ${seenAt}`);
 };
 
 // Get user's posts
@@ -277,4 +268,10 @@ export const replyToPost = async (
     facets: facets.length > 0 ? facets : undefined,
     reply: reply
   });
+};
+
+// Get a profile by DID
+export const getProfile = async (agent: BskyAgent, did: string) => {
+  const response = await agent.getProfile({ actor: did });
+  return response.data;
 };
