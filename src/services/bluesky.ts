@@ -263,7 +263,7 @@ export const replyToPost = async (
   }
 
   // Post with facets if any were created
-  await agent.post({
+  return agent.post({
     text,
     facets: facets.length > 0 ? facets : undefined,
     reply: reply

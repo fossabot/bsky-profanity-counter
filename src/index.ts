@@ -28,8 +28,8 @@ async function main() {
   logger.info('🤬 Starting profanity.accountant');
 
   try {
-    // Reset any mentions that have been stuck in ANALYZING state for more than 30 minutes
-    const resetCount = await db.resetStuckMentions(30);
+    // Reset any mentions that have been stuck in ANALYZING state for more than 20 minutes
+    const resetCount = await db.resetStuckMentions(20);
     if (resetCount > 0) {
       logger.info(`🔄 Reset ${resetCount} mentions that were stuck in ANALYZING state`);
     }

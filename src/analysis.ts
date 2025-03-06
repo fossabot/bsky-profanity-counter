@@ -128,6 +128,7 @@ async function processMention(agent: BskyAgent, mention: Mention) {
   } catch (error) {
     logger.error(`❌ Error processing mention: ${error}`);
     // Leave the mention in ANALYZING state for retry later
+    // TODO mark it as UNPROCESSED.
   }
 }
 
