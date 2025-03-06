@@ -118,9 +118,13 @@ export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBs
         cursor,
       });
 
-      const posts = response.data.feed
-        .filter(item => !item.reason) // Filter out reposts
-        .map(item => item.post);
+      const posts = response.data.feed.reduce((acc, item) => {
+        // Only include items that are not reposts
+        if (!item.reason) {
+          acc.push(item.post);
+        }
+        return acc;
+      }, [] as AppBskyFeedDefs.PostView[]);
 
       if (posts.length === 0) {
         logger.info(`🔍 No more posts found after ${allPosts.length} total posts`);
@@ -132,7 +136,7 @@ export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBs
         const lastPost = posts[posts.length - 1];
         const lastPostRecord = lastPost.record as any;
 
-        if (lastPostRecord && lastPostRecord.createdAt) {
+        if (lastPostRecord?.createdAt) {
           const postDate = new Date(lastPostRecord.createdAt);
           oldestPostDate = postDate;
 
@@ -144,7 +148,7 @@ export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBs
             // Filter out posts older than one year
             const recentPosts = posts.filter(post => {
               const record = post.record as any;
-              return record && record.createdAt && new Date(record.createdAt) >= ONE_YEAR_AGO;
+              return record?.createdAt && new Date(record.createdAt) >= ONE_YEAR_AGO;
             });
 
             allPosts.push(...recentPosts);
