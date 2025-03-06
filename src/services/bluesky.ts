@@ -89,7 +89,7 @@ export const markNotificationsAsRead = async (agent: BskyAgent) => {
 export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBskyFeedDefs.PostView[]> => {
   const allPosts: AppBskyFeedDefs.PostView[] = [];
   let cursor;
-  const MAX_POSTS = 20_000; // Maximum number of posts to retrieve
+  const MAX_POSTS = 30_000; // Maximum number of posts to retrieve
   const CHUNK_SIZE = 100;  // Size of each chunk (API limit)
   const ONE_YEAR_AGO = new Date();
   ONE_YEAR_AGO.setFullYear(ONE_YEAR_AGO.getFullYear() - 1);
@@ -166,8 +166,6 @@ export const getUserPosts = async (agent: BskyAgent, did: string): Promise<AppBs
 
     } catch (error) {
       logger.error(`❌ Error fetching posts chunk #${chunkCount}: ${error || 'unknown'}`);
-      // Wait a bit before retrying to avoid overwhelming the API
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
