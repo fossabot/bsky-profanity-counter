@@ -31,6 +31,10 @@ async function main() {
     const agent = await createAgent();
     logger.success('✅ Successfully authenticated with Bluesky');
 
+    // Hardcoded bot DID for self-mention detection (no need to fetch it each time)
+    const botDid = 'did:plc:zq2louqgczh23wrrduwwbvbn';
+    logger.info(`🤖 Bot authenticated as: ${BLUESKY_IDENTIFIER} (${botDid})`);
+
     // Get recent mentions - these are already sorted from oldest to newest
     const mentions = await getMentions(agent);
 
@@ -107,6 +111,23 @@ async function main() {
           const authorHandle = profileResponse.data.handle;
 
           logger.info(`🗣️ Processing ${isDirectMention ? 'direct mention' : 'reply mention'} for author: ${authorHandle} (${authorDid})`);
+
+          // Check if the bot is being tagged/mentioned (comparing DIDs for accuracy)
+          if (authorDid === botDid) {
+            logger.info(`😇 Bot was tagged directly, responding with canned message`);
+
+            // Reply to the mention with the canned message
+            await replyToPost(agent, {
+              uri: mention.uri,
+              cid: mention.cid
+            }, "😇 I would never swear!", rootUri, rootCid);
+
+            logger.success(`✅ Replied to self-mention with canned message`);
+
+            // Increment our successfully processed counter
+            successfullyProcessed++;
+            continue;
+          }
 
           // Check if we have a cached result for this author
           let analysis = profanityCache.get(authorDid);
