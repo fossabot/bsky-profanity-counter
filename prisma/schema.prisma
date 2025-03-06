@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MentionStatus {
+  UNPROCESSED
+  ANALYZING
+  DONE
+}
+
+model Mention {
+  id            String        @id @default(cuid())
+  userHandle    String        // The handle of the user to analyze
+  postId        String        // The ID of the post containing the mention
+  postUrl       String        // URL to the post
+  isReply       Boolean       // Whether it's a reply or direct mention
+  status        MentionStatus @default(UNPROCESSED)
+  replyPostId   String?       // The ID of our reply post (if we've replied)
+  replyUrl      String?       // URL to our reply
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relation to Analysis if needed
+  analysisId    String?
+  analysis      Analysis?     @relation(fields: [analysisId], references: [id])
+}
+
+model Analysis {
+  id                String    @id @default(cuid())
+  userHandle        String    @unique  // The handle of the analyzed user
+  totalPosts        Int       // Total posts analyzed
+  profanityCount    Int       // Count of profanity instances
+  profanityDetails  Json      // Store all profanity details including top ones
+  lastAnalyzedAt    DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relation to Mentions
+  mentions          Mention[]
+}
