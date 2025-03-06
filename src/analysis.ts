@@ -1,12 +1,10 @@
 import { BskyAgent } from '@atproto/api';
+import { Mention } from '@prisma/client';
 import * as db from './services/database.js';
 import * as bsky from './services/bluesky.js';
 import * as profanity from './services/profanity.js';
 import * as logger from './services/logger.js';
 import type { ProfanityDetails } from './services/database.js';
-
-// Infer the Mention type from the database function return type
-type Mention = Awaited<ReturnType<typeof db.getUnprocessedMention>>[number];
 
 /**
  * Process a single mention by analyzing the user's post history
