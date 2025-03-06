@@ -149,7 +149,11 @@ export async function processUnanalyzedMentions(agent: BskyAgent): Promise<void>
 
   // Process the first mention
   const mention = await db.getUnprocessedMention();
-  await processMention(agent, mention);
+  if (mention) {
+    await processMention(agent, mention);
+  } else {
+    logger.warn('⚠️ No unprocessed mention found to process. Maybe another job already snatched the last one?');
+  }
 
   // Recursively process the remaining mentions
   await processUnanalyzedMentions(agent);
