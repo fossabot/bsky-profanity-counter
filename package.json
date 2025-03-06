@@ -16,8 +16,10 @@
   },
   "dependencies": {
     "@atproto/api": "^0.12.2",
+    "@prisma/client": "^6.4.1",
     "dotenv": "^16.4.5",
-    "loggit": "^1.1.1"
+    "loggit": "^1.1.1",
+    "prisma": "^6.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
