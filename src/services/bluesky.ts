@@ -57,7 +57,9 @@ export const getMentions = async (agent: BskyAgent) => {
   // Start the recursive fetching process
   await fetchNotificationsPage();
 
-  if (!allNotifications.length) {
+  if (allNotifications.length) {
+    logger.info(`📥 Found ${allNotifications.length} notifications`);
+  } else {
     logger.info('❌ No notifications found');
     return [];
   }
@@ -69,7 +71,7 @@ export const getMentions = async (agent: BskyAgent) => {
       !notification.isRead
   );
 
-  logger.info(`📋 Found ${unreadMentions.length} unread mentions`);
+  logger.info(`📤 Found ${unreadMentions.length} unread mentions`);
 
   return unreadMentions;
 };
