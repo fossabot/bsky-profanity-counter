@@ -3,6 +3,7 @@ import * as db from './services/database.js';
 import * as bsky from './services/bluesky.js';
 import * as profanity from './services/profanity.js';
 import * as logger from './services/logger.js';
+import type { ProfanityDetails } from './services/database.js';
 
 // Infer the Mention type from the database function return type
 type Mention = Awaited<ReturnType<typeof db.getUnprocessedMentions>>[number];
@@ -27,8 +28,8 @@ async function processMention(agent: BskyAgent, mention: Mention) {
       const responseMessage = profanity.generateResponseMessage(
         {
           totalCount: freshAnalysis.profanityCount,
-          wordCounts: freshAnalysis.profanityDetails?.wordCounts,
-          topThree: freshAnalysis.profanityDetails?.topProfanities?.slice(0, 3).map((p: { word: string; count: number }, i: number) => ({
+          wordCounts: (freshAnalysis.profanityDetails as ProfanityDetails)?.wordCounts,
+          topThree: (freshAnalysis.profanityDetails as ProfanityDetails)?.topProfanities?.slice(0, 3).map((p: { word: string; count: number }, i: number) => ({
             word: p.word,
             count: p.count,
             rank: i + 1

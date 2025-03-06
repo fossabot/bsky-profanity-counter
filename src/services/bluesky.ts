@@ -1,4 +1,4 @@
-import { BskyAgent, AppBskyFeedDefs } from '@atproto/api';
+import { BskyAgent, AppBskyFeedDefs, AppBskyRichtextFacet } from '@atproto/api';
 import dotenv from 'dotenv';
 import * as logger from './logger.js';
 import type { Notification } from '../types.js';
@@ -212,7 +212,7 @@ export const replyToPost = async (
   logger.info(`🗣️ Replying to ${replyTo.uri}...`);
 
   // Create facets for mentions in the text
-  const facets = [];
+  const facets: AppBskyRichtextFacet.Main[] = [];
 
   // Regular expression to find mentions in the text
   const mentionRegex = /@([a-zA-Z0-9.-]+)/g;
@@ -240,7 +240,7 @@ export const replyToPost = async (
             did
           }
         ]
-      });
+      } as AppBskyRichtextFacet.Main);
     } catch (error) {
       logger.error(`❌ Error resolving handle ${handle}\n\t- ${error || 'unknown'}`);
     }
