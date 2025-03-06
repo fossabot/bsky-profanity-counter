@@ -43,16 +43,13 @@ async function main() {
     logger.info('🗣️ Getting unread mentions from Bluesky...');
     const mentions = await getMentions(agent);
 
-    if (mentions.length === 0) {
-      logger.info('🫤 No new mentions to process');
-      await db.disconnect();
-      return;
-    } else {
+    if (mentions.length > 0) {
       logger.info(`✅ Found ${mentions.length} unread mentions to process`);
+      //  First thing we do is store the mentions in the database
+      await storeMentions(agent, mentions);
+    } else {
+      logger.info('🫤 No new mentions to store, going to process some analysis');
     }
-
-    //  First thing we do is store the mentions in the database
-    await storeMentions(agent, mentions);
 
     // Now we check for unanalyzed mentions and process them
     await checkAndProcessMentions(agent);
