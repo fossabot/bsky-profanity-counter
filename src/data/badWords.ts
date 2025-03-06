@@ -610,7 +610,6 @@ const badWords: Set<string> = new Set([
   'n1gger',
   'nambla',
   'nawashi',
-  'nazi',
   'negro',
   'neonazi',
   'nig nog',
