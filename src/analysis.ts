@@ -6,7 +6,7 @@ import * as logger from './services/logger.js';
 import type { ProfanityDetails } from './services/database.js';
 
 // Infer the Mention type from the database function return type
-type Mention = Awaited<ReturnType<typeof db.getUnprocessedMentions>>[number];
+type Mention = Awaited<ReturnType<typeof db.getUnprocessedMention>>[number];
 
 /**
  * Process a single mention by analyzing the user's post history
@@ -139,18 +139,18 @@ async function processMention(agent: BskyAgent, mention: Mention) {
  */
 export async function processUnanalyzedMentions(agent: BskyAgent): Promise<void> {
   // Get unprocessed mentions
-  const unprocessedMentions = await db.getUnprocessedMentions();
+  const unprocessedMentionsCount = await db.getUnprocessedMentionsCount();
 
   // Base case: no more unprocessed mentions
-  if (unprocessedMentions.length === 0) {
+  if (unprocessedMentionsCount === 0) {
     logger.info('✅ No more unprocessed mentions to analyze');
     return;
   }
 
-  logger.info(`📈 Found ${unprocessedMentions.length} unprocessed mentions to analyze`);
+  logger.info(`📈 Found ${unprocessedMentionsCount} unprocessed mentions to analyze`);
 
   // Process the first mention
-  const [mention] = unprocessedMentions;
+  const mention = await db.getUnprocessedMention();
   await processMention(agent, mention);
 
   // Recursively process the remaining mentions

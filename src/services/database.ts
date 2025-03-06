@@ -39,8 +39,22 @@ export async function storeMention({
 /**
  * Get all mentions with UNPROCESSED status
  */
-export async function getUnprocessedMentions() {
-  return prisma.mention.findMany({
+export async function getUnprocessedMention() {
+  return prisma.mention.findFirst({
+    where: {
+      status: 'UNPROCESSED',
+    },
+    orderBy: {
+      createdAt: 'asc', // Order by creation date, oldest first
+    }
+  });
+}
+
+/**
+ * Get count of all mentions with UNPROCESSED status
+ */
+export async function getUnprocessedMentionsCount() {
+  return prisma.mention.count({
     where: {
       status: 'UNPROCESSED',
     },
