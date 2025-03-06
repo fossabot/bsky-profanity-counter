@@ -765,7 +765,6 @@ const badWords: Set<string> = new Set([
   'scrotum',
   'semen',
   'sexo',
-  'sexy',
   'sh!+',
   'sh!t',
   'sh1t',
