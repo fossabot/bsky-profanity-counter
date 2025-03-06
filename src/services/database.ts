@@ -105,7 +105,7 @@ export async function markMentionAsDone({
   mentionId: string;
   replyPostId: string;
   replyUrl: string;
-  analysisId: string;
+  analysisId?: string;
 }) {
   return prisma.mention.update({
     where: { id: mentionId },

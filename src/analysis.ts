@@ -61,7 +61,20 @@ async function processMention(agent: BskyAgent, mention: Mention) {
           analysisId: freshAnalysis.id
         });
 
-        logger.success(`✅ Replied to mention with fresh analysis for ${mention.userHandle}`);
+        logger.success(`✅ Used cached analysis to reply to mention for ${mention.userHandle}`);
+      } else {
+        // The post no longer exists, so we can't reply to it
+        logger.warn(`⚠️ Could not find mention post to reply to (likely deleted): ${mention.postUrl}`);
+
+        // Still mark the mention as done, but without a reply
+        await db.markMentionAsDone({
+          mentionId: mention.id,
+          replyPostId: '',
+          replyUrl: '',
+          analysisId: freshAnalysis.id
+        });
+
+        logger.info(`✅ Marked mention as processed (post unavailable) for ${mention.userHandle}`);
       }
     } else {
       // No fresh analysis, need to analyze post history
@@ -119,10 +132,31 @@ async function processMention(agent: BskyAgent, mention: Mention) {
           });
 
           logger.success(`✅ Analyzed and replied to mention for ${mention.userHandle}`);
+        } else {
+          // The post no longer exists, so we can't reply to it
+          logger.warn(`⚠️ Could not find mention post to reply to (likely deleted): ${mention.postUrl}`);
+
+          // Still mark the mention as done, but without a reply
+          await db.markMentionAsDone({
+            mentionId: mention.id,
+            replyPostId: '',
+            replyUrl: '',
+            analysisId: dbAnalysis.id
+          });
+
+          logger.info(`✅ Marked mention as processed (post unavailable) for ${mention.userHandle}`);
         }
       } else {
         logger.warn(`⚠️ No posts found for ${mention.userHandle}`);
-        // TODO: Handle case where no posts are found
+
+        // Mark the mention as done, but with no analysis or reply
+        await db.markMentionAsDone({
+          mentionId: mention.id,
+          replyPostId: '',
+          replyUrl: '',
+        });
+
+        logger.info(`✅ Marked mention as processed (no posts found) for ${mention.userHandle}`);
       }
     }
   } catch (error) {
