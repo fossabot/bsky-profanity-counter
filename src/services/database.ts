@@ -37,16 +37,36 @@ export async function storeMention({
 }
 
 /**
- * Get all mentions with UNPROCESSED status
+ * Get an unprocessed mention and atomically mark it as analyzing.
+ * Uses a transaction to prevent race conditions.
  */
 export async function getUnprocessedMention() {
-  return prisma.mention.findFirst({
-    where: {
-      status: 'UNPROCESSED',
-    },
-    orderBy: {
-      createdAt: 'asc', // Order by creation date, oldest first
+  return prisma.$transaction(async (tx) => {
+    // Find the first unprocessed mention
+    const mention = await tx.mention.findFirst({
+      where: {
+        status: 'UNPROCESSED',
+      },
+      orderBy: {
+        createdAt: 'asc', // Order by creation date, oldest first
+      }
+    });
+
+    if (!mention) {
+      return null;
     }
+
+    // Immediately mark it as analyzing within the same transaction
+    const updatedMention = await tx.mention.update({
+      where: {
+        id: mention.id,
+      },
+      data: {
+        status: 'ANALYZING',
+      },
+    });
+
+    return updatedMention;
   });
 }
 
@@ -63,6 +83,8 @@ export async function getUnprocessedMentionsCount() {
 
 /**
  * Mark a mention as being analyzed
+ * This is now handled in the getUnprocessedMention transaction,
+ * but keeping for backward compatibility
  */
 export async function markMentionAsAnalyzing(mentionId: string) {
   return prisma.mention.update({
@@ -170,6 +192,28 @@ export async function cleanupOldAnalyses(olderThanDays: number = 30) {
         lt: cutoffDate,
       },
     },
+  });
+
+  return result.count;
+}
+
+/**
+ * Reset mentions that are stuck in ANALYZING state for more than the specified minutes
+ * This helps recover from crashes or process terminations
+ */
+export async function resetStuckMentions(olderThanMinutes: number = 30) {
+  const cutoffDate = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+
+  const result = await prisma.mention.updateMany({
+    where: {
+      status: 'ANALYZING',
+      updatedAt: {
+        lt: cutoffDate
+      }
+    },
+    data: {
+      status: 'UNPROCESSED'
+    }
   });
 
   return result.count;

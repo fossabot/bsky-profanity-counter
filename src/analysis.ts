@@ -12,8 +12,8 @@ import type { ProfanityDetails } from './services/database.js';
  */
 async function processMention(agent: BskyAgent, mention: Mention) {
   try {
-    // Mark the mention as being analyzed
-    await db.markMentionAsAnalyzing(mention.id);
+    // The mention is already marked as ANALYZING by our transaction
+    // so we don't need to call markMentionAsAnalyzing here anymore
     logger.info(`🔍 Processing mention for user: ${mention.userHandle}`);
 
     // Check if we have a fresh analysis (less than 24 hours old)
@@ -148,6 +148,7 @@ export async function processUnanalyzedMentions(agent: BskyAgent): Promise<void>
   logger.info(`📈 Found ${unprocessedMentionsCount} unprocessed mentions to analyze`);
 
   // Process the first mention
+  // getUnprocessedMention now also marks it as ANALYZING atomically
   const mention = await db.getUnprocessedMention();
   if (mention) {
     await processMention(agent, mention);

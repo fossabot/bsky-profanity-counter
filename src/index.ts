@@ -28,6 +28,12 @@ async function main() {
   logger.info('🤬 Starting profanity.accountant');
 
   try {
+    // Reset any mentions that have been stuck in ANALYZING state for more than 30 minutes
+    const resetCount = await db.resetStuckMentions(30);
+    if (resetCount > 0) {
+      logger.info(`🔄 Reset ${resetCount} mentions that were stuck in ANALYZING state`);
+    }
+
     // Create and authenticate the Bluesky agent
     const agent = await createAgent();
 
