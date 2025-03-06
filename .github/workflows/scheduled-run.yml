@@ -58,3 +58,4 @@ jobs:
           NODE_ENV: production
           BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
