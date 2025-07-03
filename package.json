@@ -22,16 +22,16 @@
     "node": ">=22.14.0"
   },
   "dependencies": {
-    "@atproto/api": "^0.14.7",
-    "@prisma/client": "^6.4.1",
-    "dotenv": "^16.4.7",
+    "@atproto/api": "^0.15.23",
+    "@prisma/client": "^6.11.1",
+    "dotenv": "^17.0.1",
     "loggit": "^1.1.1",
-    "prisma": "^6.4.1"
+    "prisma": "^6.11.1"
   },
   "devDependencies": {
-    "@types/node": "^22.13.9",
+    "@types/node": "^22.16.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }
