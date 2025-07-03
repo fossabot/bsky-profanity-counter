@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-esm src/index.ts",
+    "update-profile": "node dist/update-profile.js",
+    "update-profile:dev": "ts-node-esm src/update-profile.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
