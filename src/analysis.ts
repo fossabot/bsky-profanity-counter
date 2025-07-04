@@ -4,6 +4,7 @@ import * as db from './services/database.js';
 import * as bsky from './services/bluesky.js';
 import * as profanity from './services/profanity.js';
 import * as logger from './services/logger.js';
+import { handleSelfTargeting } from './services/self-targeting.js';
 import type { ProfanityDetails } from './services/database.js';
 
 /**
@@ -15,6 +16,12 @@ async function processMention(agent: BskyAgent, mention: Mention) {
     // The mention is already marked as ANALYZING by our transaction
     // so we don't need to call markMentionAsAnalyzing here anymore
     logger.info(`🔍 Processing mention for user: ${mention.userHandle}`);
+
+    // Check if user is trying to target the bot itself
+    if (mention.userHandle === 'profanity.accountant') {
+      await handleSelfTargeting(agent, mention);
+      return; // Exit early, don't do profanity analysis
+    }
 
     // Check if we have a fresh analysis (less than 24 hours old)
     const freshAnalysis = await db.findFreshAnalysis(mention.userHandle);
