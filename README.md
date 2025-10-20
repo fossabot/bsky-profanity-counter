@@ -13,6 +13,8 @@
 Counting your sins (if profanity was a sin).
 
 ## How It Works
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhimynameisdave%2Fbsky-profanity-counter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhimynameisdave%2Fbsky-profanity-counter?ref=badge_shield)
+
 
 1. The bot runs on a schedule (every 10 minutes via GitHub Actions)
 2. It checks for new mentions in replies
@@ -84,3 +86,6 @@ Shoutout to the [Sheriff of Profanity](https://www.reddit.com/user/profanitycoun
 ## License
 
 MIT
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhimynameisdave%2Fbsky-profanity-counter.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhimynameisdave%2Fbsky-profanity-counter?ref=badge_large)
